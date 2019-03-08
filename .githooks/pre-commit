@@ -1,3 +1,29 @@
 #!/bin/bash
 
-exit 1;
+#############################################
+#
+# FUNCTIONS
+#
+#############################################
+function get_current_branch() {
+    git symbolic-ref --short -q HEAD
+}
+
+#############################################
+#
+# MAIN
+#
+#############################################
+CURRENT_BRANCH=`get_current_branch`
+
+# [ "${CURRENT_BRANCH}" == "master" ] && { 
+#     echo "CANNOT COMMIT ANYTHING ON *master* BRANCH!"
+#     exit 1; 
+# }
+
+[ "${CURRENT_BRANCH}" == "dev" ] && {
+    echo "CANNOT COMMIT ANYTHING ON *dev* BRANCH!"
+    exit 1; 
+}
+
+exit 0;
