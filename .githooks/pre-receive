@@ -1,4 +1,12 @@
-#!/bin/bash
+#!/usr/bin/python3
 
-echo "are you working?"
-exit 1
+import sys
+import fileinput
+# Read in each ref that the user is trying to update
+for line in fileinput.input():
+    print("pre-receive: Trying to push ref: {0}".format(line))
+
+print("aborting the push!")
+
+# Abort the push
+sys.exit(1)

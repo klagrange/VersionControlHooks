@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# disallow all rebasing
+echo "Rebasing is dangerous. Don't do it."
+exit 1

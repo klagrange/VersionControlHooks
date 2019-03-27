@@ -1,0 +1,23 @@
+#!/usr/bin/python3
+import sys
+import helpers as h
+
+# Collect the parameters
+COMMIT_MSG_FILEPATH = sys.argv[1]
+
+if len(sys.argv) > 2:
+    COMMIT_TYPE = sys.argv[2]
+else:
+    COMMIT_TYPE = ''
+if len(sys.argv) > 3:
+    COMMIT_HASH = sys.argv[3]
+else:
+    COMMIT_HASH = ''
+
+    # figure out which branch we're on
+    BRANCH = h.get_current_branch()
+   
+    with open(COMMIT_MSG_FILEPATH, 'r+') as f:
+        CONTENT = f.read()
+        f.seek(0, 0)
+        f.write("{0} {1}".format(BRANCH, CONTENT))

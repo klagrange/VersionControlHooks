@@ -1,99 +1,50 @@
-#!/bin/bash
+#!/usr/bin/python3
+import sys
+import json
+from colorama import Fore, Style, init
+import helpers as h
+init(autoreset=True)
 
-#############################################
-#
-# CONFIGURATION VARIABLES - NON EDITABLE
-#
-#############################################
-PREVIOUS_HEAD="$1"
-NEW_HEAD="$2"
-IS_BRANCH_CHECKOUT="$3"
+PREVIOUS_HEAD = sys.argv[1]
+NEW_HEAD = sys.argv[2]
+IS_BRANCH_CHECKOUT = sys.argv[3]
 
-#############################################
-#
-# CONFIGURATION VARIABLES - EDITABLE
-# MODIFY WITH CAUTION
-#
-#############################################
-declare -a ALLOWED_FROM_DEV_BRANCHES=("feature-1" "feature-2" "feature-3")
-declare -a ALLOWED_FROM_MASTER_BRANCHES=("dev")
+# this is a file checkout, ignore.
+if IS_BRANCH_CHECKOUT == "0": sys.exit(0)
 
-#############################################
-#
-# FUNCTIONS
-#
-#############################################
-function get_current_branch() {
-    git symbolic-ref --short -q HEAD
-}
+# if we checkout to master or dev, ignore.
+if h.get_current_branch() in ["master", "dev"]: sys.exit(0)
 
-function get_previous_branch() {
-    last_branch_full=`git rev-parse --symbolic-full-name @{-1}`
-    shortened="${last_branch_full##*/}"
-    echo "$shortened"
-}
+# if we checkout from dev, ensure we only checkout to allowed branches.
+# ie a branch that corresponds to an issue key on JIRA.
+if h.get_previous_branch() == "dev":
+    ALLOWED_BRANCHES, DETAILS = h.call_jira()
 
-function go_to_previous_branch_and_delete_current_branch() {
-    PREVIOUS_BRANCH="$1"
-    CURRENT_BRANCH="$2"
-    git checkout "${PREVIOUS_BRANCH}"
-    git branch -D "${CURRENT_BRANCH}" 
-}
+    if h.get_current_branch() not in ALLOWED_BRANCHES:
+        h.go_to_previous_branch_and_delete_current_branch()
 
-#############################################
-#
-# MAIN
-#
-#############################################
-if [ "$IS_BRANCH_CHECKOUT" == 1 ]; then
+        if ALLOWED_BRANCHES:
+            print("""{0}
 
-    PREVIOUS_BRANCH=`get_previous_branch`
-    CURRENT_BRANCH=`get_current_branch`
+At the moment, the allowed branches are: {1}{2}{3}
 
-    # allow checkout to master branch
-    [ "${CURRENT_BRANCH}" == "master" ] && { exit 0; }
-    
-    # allow checkout to dev branch
-    [ "${CURRENT_BRANCH}" == "dev" ] && { exit 0; }
+For more details:
+{4}""".format(
+            Fore.RED + "You can only create branches based on JIRA issues/tickets." + Style.RESET_ALL,
+            Fore.GREEN,
+            ALLOWED_BRANCHES,
+            Style.RESET_ALL,
+            json.dumps(DETAILS, indent=4, sort_keys=True)
+        ))
+        else:
+            print("""{0}You can only create branches based on JIRA issues/tickets.
+You do not have any open JIRA issues/tickets.
+""".format(Fore.RED))
 
-    # prevent checkout to unallowed branch from dev 
-    if [ "${PREVIOUS_BRANCH}" == "dev" ]; then
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
-        for ALLOWED_BRANCH in "${ALLOWED_FROM_DEV_BRANCHES[@]}"; do
-            [ "${CURRENT_BRANCH}" == "$ALLOWED_BRANCH" ] && { exit 0; }
-        done
-
-        go_to_previous_branch_and_delete_current_branch "${PREVIOUS_BRANCH}" "${CURRENT_BRANCH}" && {
-            echo "";
-            echo "YOU ARE NOT ALLOWED TO CREATED A BRANCH WITH THAT NAME.";
-            echo "The list of allowed branches from *dev* are: ${ALLOWED_FROM_DEV_BRANCHES[@]}";
-            exit 1;
-        }
-    fi
-
-    # prevent checkout to unallowed branch from master 
-    if [ "${PREVIOUS_BRANCH}" == "master" ]; then
-
-        for ALLOWED_BRANCH in "${ALLOWED_FROM_MASTER_BRANCHES[@]}"; do
-            [ "${CURRENT_BRANCH}" == "$ALLOWED_BRANCH" ] && { exit 0; }
-        done
-
-        go_to_previous_branch_and_delete_current_branch "${PREVIOUS_BRANCH}" "${CURRENT_BRANCH}" && {
-            echo "";
-            echo "YOU ARE NOT ALLOWED TO CREATED A BRANCH WITH THAT NAME.";
-            echo "The list of allowed branches from *master* are: ${ALLOWED_FROM_MASTER_BRANCHES[@]}";
-            exit 1;
-        }
-    fi
-fi
-
-
-
-
-
-
-
-
-
-
-
+h.go_to_previous_branch_and_delete_current_branch()
+print("{0}You can only checkout to branch dev from master".format(Fore.YELLOW))
+sys.exit(1)

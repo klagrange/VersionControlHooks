@@ -1,29 +1,9 @@
-#!/bin/bash
+#!/usr/bin/python3
+import sys
+import helpers as h
+from colorama import Fore, Style, init
+init(autoreset=True)
 
-#############################################
-#
-# FUNCTIONS
-#
-#############################################
-function get_current_branch() {
-    git symbolic-ref --short -q HEAD
-}
-
-#############################################
-#
-# MAIN
-#
-#############################################
-CURRENT_BRANCH=`get_current_branch`
-
-# [ "${CURRENT_BRANCH}" == "master" ] && { 
-#     echo "CANNOT COMMIT ANYTHING ON *master* BRANCH!"
-#     exit 1; 
-# }
-
-[ "${CURRENT_BRANCH}" == "dev" ] && {
-    echo "CANNOT COMMIT ANYTHING ON *dev* BRANCH!"
-    exit 1; 
-}
-
-exit 0;
+if h.get_current_branch() in ["Master", "dev"]:
+    print(Fore.RED + "You cannot commit on *master* & and *dev* branches!")
+    sys.exit(1)
